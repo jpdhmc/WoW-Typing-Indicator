@@ -1,0 +1,6 @@
+## Interface: 110000
+## Title: wow-typing-indicator
+## Author: jpdhmc
+## Version: 0.1
+
+main.lua
