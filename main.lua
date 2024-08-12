@@ -1,64 +1,89 @@
 local addonPrefix = "typingindicator"
 
 if C_ChatInfo.RegisterAddonMessagePrefix(addonPrefix) then
-    print("To enable/disable WoW Typing Indicator, type /wowtypingindicator or /wti.")
+    print("To enable/disable WoW Typing Indicator tracking your typing, type /wowtypingindicator or /wti. Disabled by default.")
 else
     print("WTI Addon prefix not registered properly.")
 end
 
--- set up party members
+-- set up party members + individual indicators
 local wtiPartyFrame = CreateFrame("Frame")
-local wtiGroupMembers = {}
 wtiPartyFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+wtiPartyFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 wtiPartyFrame:SetScript("OnEvent", function()
+    local wtiGroupMembers = {}
+    local wtiIndividualIndicators = {}
     for i = 1, GetNumGroupMembers() - 1 do
         -- this is because msgSender and unitfullname are formatted differently
         formattedUnitName = string.gsub(UnitFullName("party" .. i), " ", "-")
-        wtiGroupMembers[formattedUnitName] = i
+        wtiGroupMembers[i] = formattedUnitName
 
         -- visuals
-        wtiIndividualIndicator = CreateFrame("Frame", formattedUnitName .. "Frame", UIParent)
-        wtiIndividualIndicator:Hide()
-        wtiIndividualIndicator:SetPoint("LEFT", _G["PartyFrame"]["MemberFrame" .. i], "RIGHT")
-        wtiIndividualIndicator:SetSize(48, 48)
-        wtiIndividualIndicator.tex = wtiIndividualIndicator:CreateTexture()
-        wtiIndividualIndicator.tex:SetAllPoints(wtiIndividualIndicator)
-        wtiIndividualIndicator.tex:SetTexture("interface/icons/ACHIEVEMENT_GUILDPERK_GMAIL")
+        wtiIndividualIndicators[i] = CreateFrame("Frame", formattedUnitName .. "Frame", UIParent)
+        wtiIndividualIndicators[i]:Hide()
+        wtiIndividualIndicators[i]:SetPoint("LEFT", _G["PartyFrame"]["MemberFrame" .. i], "RIGHT")
+        wtiIndividualIndicators[i]:SetSize(48, 48)
+        wtiIndividualIndicators[i].tex = wtiIndividualIndicators[i]:CreateTexture()
+        wtiIndividualIndicators[i].tex:SetAllPoints(wtiIndividualIndicators[i])
+        wtiIndividualIndicators[i].tex:SetTexture("interface/icons/ACHIEVEMENT_GUILDPERK_GMAIL")
 
         -- event
-        wtiIndividualIndicator:RegisterEvent("CHAT_MSG_ADDON")
-        wtiIndividualIndicator:SetScript("OnEvent", function(self, event, msgPrefix, msgText, msgChannel, msgSender)
-        if msgSender == formattedUnitName then
-            if msgText == "1" then
-                wtiIndividualIndicator:Show()
-            else
-                wtiIndividualIndicator:Hide()
+        wtiIndividualIndicators[i]:RegisterEvent("CHAT_MSG_ADDON")
+        wtiIndividualIndicators[i]:SetScript("OnEvent", function(self, event, msgPrefix, msgText, msgChannel, msgSender)
+            if msgSender == wtiGroupMembers[i] then
+                if msgText == "1" then
+                    wtiIndividualIndicators[i]:Show()
+                else
+                    wtiIndividualIndicators[i]:Hide()
+                end
             end
-        end
         end)
     end
 end)
 
+-- display element above chatbox
+local wtiMessageFrame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+local wtiText = wtiMessageFrame:CreateFontString(nil, "OVERLAY", "GameTooltipText")
+local wtiConcText = ""
+wtiMessageFrame:SetPoint("BOTTOM", GeneralDockManager, "TOP")
+wtiMessageFrame:SetSize(430, 30)
+wtiMessageFrame:SetBackdrop(BACKDROP_TUTORIAL_16_16)
+wtiText:SetPoint("CENTER")
+wtiMessageFrame:RegisterEvent("CHAT_MSG_ADDON")
+wtiMessageFrame:SetScript("OnEvent", function(self, event, msgPrefix, msgText, msgChannel, msgSender)
+    wtiSenderName = string.gsub(msgSender, "-.*", "... ")
+    if msgText == "1" then
+        if not string.match(wtiConcText, wtiSenderName) then
+            wtiConcText = wtiConcText .. wtiSenderName
+            wtiText:SetText(wtiConcText)
+        end
+    elseif msgText == "0" then
+        if string.match(wtiConcText, wtiSenderName) then
+            wtiConcText = string.gsub(wtiConcText, wtiSenderName, "")
+            wtiText:SetText(wtiConcText)
+        end
+    end
+end)
+
+-- start sending player's typing info
 local function toggleIndicator()
     if timerVar ~= nil and not timerVar:IsCancelled() then
         timerVar:Cancel()
-        print("not tracking typing")
+        print("No longer sending typing status.")
     else
-        prevText = ""
-        print("starting to track typing")
-        timerVar = C_Timer.NewTicker(1, function()
+        --prevText = ""
+        print("You are now sending your typing status.")
+        timerVar = C_Timer.NewTicker(0.1, function()
             if ACTIVE_CHAT_EDIT_BOX ~= nil then
-                if ACTIVE_CHAT_EDIT_BOX:GetText() ~= "" and ACTIVE_CHAT_EDIT_BOX:GetText() ~= prevText then
+                --if ACTIVE_CHAT_EDIT_BOX:GetText() ~= "" and ACTIVE_CHAT_EDIT_BOX:GetText() ~= prevText then
+                if ACTIVE_CHAT_EDIT_BOX:GetText() ~= "" then
                     C_ChatInfo.SendAddonMessage(addonPrefix, "1", "INSTANCE_CHAT")
-                    print("sent 1")
                 else
                     C_ChatInfo.SendAddonMessage(addonPrefix, "0", "INSTANCE_CHAT")
-                    print("sent 0")
                 end
-                prevText = ACTIVE_CHAT_EDIT_BOX:GetText()
+                --prevText = ACTIVE_CHAT_EDIT_BOX:GetText()
             else
                 C_ChatInfo.SendAddonMessage(addonPrefix, "0", "INSTANCE_CHAT")
-                print("sent 0")
             end
         end)
     end
