@@ -77,13 +77,13 @@ local function toggleIndicator()
             if ACTIVE_CHAT_EDIT_BOX ~= nil then
                 --if ACTIVE_CHAT_EDIT_BOX:GetText() ~= "" and ACTIVE_CHAT_EDIT_BOX:GetText() ~= prevText then
                 if ACTIVE_CHAT_EDIT_BOX:GetText() ~= "" then
-                    C_ChatInfo.SendAddonMessage(addonPrefix, "1", "INSTANCE_CHAT")
+                    C_ChatInfo.SendAddonMessage(addonPrefix, "1", "PARTY")
                 else
-                    C_ChatInfo.SendAddonMessage(addonPrefix, "0", "INSTANCE_CHAT")
+                    C_ChatInfo.SendAddonMessage(addonPrefix, "0", "PARTY")
                 end
                 --prevText = ACTIVE_CHAT_EDIT_BOX:GetText()
             else
-                C_ChatInfo.SendAddonMessage(addonPrefix, "0", "INSTANCE_CHAT")
+                C_ChatInfo.SendAddonMessage(addonPrefix, "0", "PARTY")
             end
         end)
     end
