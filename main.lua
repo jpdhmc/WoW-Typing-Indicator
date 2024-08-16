@@ -69,21 +69,15 @@ end)
 local function toggleIndicator()
     if timerVar ~= nil and not timerVar:IsCancelled() then
         timerVar:Cancel()
+        C_ChatInfo.SendAddonMessage(addonPrefix, "0", "PARTY")
         print("No longer sending typing status.")
     else
-        --prevText = ""
         print("You are now sending your typing status.")
         timerVar = C_Timer.NewTicker(0.1, function()
-            if ACTIVE_CHAT_EDIT_BOX ~= nil then
-                --if ACTIVE_CHAT_EDIT_BOX:GetText() ~= "" and ACTIVE_CHAT_EDIT_BOX:GetText() ~= prevText then
-                if ACTIVE_CHAT_EDIT_BOX:GetText() ~= "" then
-                    C_ChatInfo.SendAddonMessage(addonPrefix, "1", "PARTY")
-                else
-                    C_ChatInfo.SendAddonMessage(addonPrefix, "0", "PARTY")
-                end
-                --prevText = ACTIVE_CHAT_EDIT_BOX:GetText()
+            if ACTIVE_CHAT_EDIT_BOX ~= nil and ACTIVE_CHAT_EDIT_BOX:GetText() ~= "" or TRP3_NPCTalkFrameScrollText:GetText() ~= nil and TRP3_NPCTalkFrameScrollText:GetText() ~= "" then
+                C_ChatInfo.SendAddonMessage(addonPrefix, "1", "INSTANCE_CHAT")
             else
-                C_ChatInfo.SendAddonMessage(addonPrefix, "0", "PARTY")
+                C_ChatInfo.SendAddonMessage(addonPrefix, "0", "INSTANCE_CHAT")
             end
         end)
     end
